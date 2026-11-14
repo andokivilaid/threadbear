@@ -21,6 +21,8 @@ Setup does the rest itself (sets `RUNNER_KEY`, deploys `convex/` and `web/`). Ne
 ## My settings
 
 - **Default permission mode: full access.** In `<home>/runner.json` set `"defaults": { "permissionMode": "full" }` so new threads, CLI calls and background jobs run with full access by default.
+- **Sentry crash reporting: OFF.** Set `THREADBEAR_SENTRY=off` persistently for every component that reads it: the runner's LaunchAgent environment (so it survives restarts and self-rebuilds), the Mac app, and my shell profile for CLI runs. Check `runner/src/sentry.ts` and `runner/scripts/install-runner.sh` for the right place, and verify after setup that nothing reports to Sentry. (Note: the iPhone App Store build is Mike's and reports to his Sentry regardless.)
+- **Full Disk Access:** remind me to grant it to `~/Applications/Threadbear Runner.app` in System Settings > Privacy & Security after install.
 
 ## Steps
 
@@ -29,15 +31,16 @@ Setup does the rest itself (sets `RUNNER_KEY`, deploys `convex/` and `web/`). Ne
 3. **Create the Convex project via the Vercel integration** (e.g. a project named `threadbear`) in my Vercel-linked Convex team, then get its production deployment URL and generate a production deploy key. Tell me briefly what you created.
 4. **Pre-seed the existing Convex deployment** so `scripts/setup.mjs` skips Convex login and project creation. Read `scripts/setup.mjs` to confirm Threadbear's home folder path, then before running setup:
    - write the deployment URL into `<home>/runner.json` as `sync.url`, and add `"defaults": { "permissionMode": "full" }` (see My settings);
-   - write `CONVEX_DEPLOY_KEY=<key>` into `<home>/secrets/convex-deploy.env` (chmod 600).
+   - write `CONVEX_DEPLOY_KEY=<key>` into `<home>/secrets/convex-deploy.env` (chmod 600);
+   - export `THREADBEAR_SENTRY=off` in the environment setup will use.
    Confirm in `setup.mjs` that `project()` will log `using <url>` and skip creation.
 5. Run `./threadbear setup --dry-run` and show me what it plans to do. It should NOT try `npx convex login` or create a project. If it does, stop and tell me.
 6. On my go-ahead, run `./threadbear setup`. Expected: it sets `RUNNER_KEY` on the deployment, deploys `convex/` and `web/`, builds and installs the runner and the Mac app.
-7. After setup, re-check `<home>/runner.json` still has `defaults.permissionMode` = `full` (setup may rewrite the file); restore it if not.
+7. After setup, re-check `<home>/runner.json` still has `defaults.permissionMode` = `full` (setup may rewrite the file), and that `THREADBEAR_SENTRY=off` is in the installed runner's LaunchAgent environment; fix either if not.
 8. Launch Threadbear and confirm the runner is connected to my deployment.
 
 ## Notes from the docs
 
 - Only the runner talks to Convex; the Mac app talks to the runner over loopback.
-- The push relay, Sentry DSN, bundle IDs and release signing key are Mike's (see `docs/forking.md`). Fine for a personal fork that follows his releases. Set `THREADBEAR_SENTRY=off` if I ask to disable crash reporting.
+- The push relay, bundle IDs and release signing key are Mike's (see `docs/forking.md`). Fine for a personal fork that follows his releases.
 - Fallback if pre-seeding fails: `./threadbear setup --yes --existing --project <name>` (needs Convex CLI login), or `--self-hosted` to run Convex in Docker.
